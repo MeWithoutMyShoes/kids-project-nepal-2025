@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    canvas {
+      background: black;
+      display: block;
+      margin: 0 auto;
+    }
+
+    div {
+      display: flex;
+      justify-content: space-evenly;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="pong" width="800" height="400"></canvas>
+  <!-- START OF CUSTOM CODE -->
+  <div>
+    <div>
+      <span>Player score: </span>
+      <span id="player" />
+    </div>
+    <div>
+      <span>Computer score: </span>
+      <span id="computer" />
+    </div>
+  </div>
+  <div class="slidecontainer">
+    <input type="range" min="1" max="20" value="9" class="slider" id="ballSpeedX">
+  </div>
+  <!-- END OF CUSTOM CODE -->
+  <script>
+    const canvas = document.getElementById("pong");
+    const ctx = canvas.getContext("2d");
+
+    // Paddle variables
+    const paddleWidth = 10;
+    const paddleHeight = 100;
+    let playerY = canvas.height / 2 - paddleHeight / 2;
+    let playerScore = 0;
+    let computerY = canvas.height / 2 - paddleHeight / 2;
+    let computerScore = 0;
+
+    // Ball variables
+    const ballSize = 20;
+    let ballX = canvas.width / 2;
+    let ballY = canvas.height / 2;
+    let ballSpeedX = document.getElementById("ballSpeedX").value;
+    let ballSpeedY = 5;
+
+    // Draw a rectangle
+    function drawRect(x, y, width, height, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, width, height);
+    }
+
+    // Draw the ball
+    function drawBall(x, y, size, color) {
+      
+      /* ORIGINAL
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2, true);
+      ctx.closePath();
+      ctx.fill();
+      */
+
+      /* CUSTOM 1: Change arc of ball
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI, true);
+      ctx.closePath();
+      ctx.fill();
+      */
+
+      // CUSTOM 2: Replace ball with text
+      /* 
+      ctx.beginPath();
+      ctx.font = "30px Arial";
+      ctx.fillText("Hello World", x - size * 2, y);
+      ctx.closePath();
+      */
+
+      // CUSTOM 3: Replace with image (sun)
+      // Note: 2 * size and (x-size, y-size) to place the image in the center 
+      const img = new Image();
+      img.src = "./sun.png";
+      const drawnImage = ctx.drawImage(img, x - size, y - size, size * 2, size * 2);
+    }
+
+    // Draw the game
+    function draw() {
+      // Clear the canvas
+      
+      // ORIGINAL
+      // drawRect(0, 0, canvas.width, canvas.height, "black");
+      
+      // CUSTOM 4: Add trail by setting oppacity
+      drawRect(0, 0, canvas.width, canvas.height, "rgb(150 234 243 / 70%)");
+
+
+      // Draw the paddles
+      drawRect(0, playerY, paddleWidth, paddleHeight, "white");
+      drawRect(canvas.width - paddleWidth, computerY, paddleWidth, paddleHeight, "white");
+
+      // Draw the ball
+      drawBall(ballX, ballY, ballSize, "white");
+    }
+
+    // Move the computer paddle
+    function moveComputerPaddle() {
+      const computerYCenter = computerY + paddleHeight / 2;
+      if (computerYCenter < ballY - 35) {
+        computerY += 3;
+      } else if (computerYCenter > ballY + 35) {
+        computerY -= 3;
+      }
+    }
+
+    // CUSTOM 5: Set score for player and computer
+    function setScores() {
+      for (const id of ['computer', 'player']) {
+        let span = document.getElementById(id);
+        if (id === "player") {
+          span.innerText = '' + playerScore;
+        } else {  
+          span.innerText = '' + computerScore;
+        }
+      }
+    }
+
+    // Update the game state
+    function update() {
+      moveComputerPaddle();
+
+      // Update ball position
+      ballX += ballSpeedX;
+      ballY += ballSpeedY;
+
+      // Ball collision with top and bottom walls
+      if (ballY - ballSize  <= 0 || ballY + ballSize >= canvas.height) {
+        ballSpeedY = -ballSpeedY;
+      }
+
+      // Ball out of bounds
+      if (ballX - ballSize < 0) {
+        // Player misses the ball
+        ballX = canvas.width / 2;
+        ballY = canvas.height / 2;
+        ballSpeedX = ballSpeedX;
+        ballSpeedY = ballSpeedY;
+        ++playerScore;
+      } else if (ballX + ballSize > canvas.width) {
+        // Computer misses the ball
+        ballX = canvas.width / 2;
+        ballY = canvas.height / 2;
+        ballSpeedX = -ballSpeedX;
+        ballSpeedY = -ballSpeedY;
+        ++computerScore;
+      }
+
+      // Ball collision with paddles
+      if (
+        ballX - ballSize < paddleWidth &&
+        ballY > playerY &&
+        ballY < playerY + paddleHeight
+      ) {
+        ballSpeedX = -ballSpeedX;
+      } else if (
+        ballX + ballSize > canvas.width - paddleWidth &&
+        ballY > computerY &&
+        ballY < computerY + paddleHeight
+      ) {
+        ballSpeedX = -ballSpeedX;
+      }
+    }
+
+    // Game loop
+    function gameLoop() {
+      draw();
+      update();
+      // CUSTOM 5: Setting scores
+      setScores();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Move player paddle with mouse
+    canvas.addEventListener("mousemove", (event) => {
+      playerY = event.clientY - canvas.getBoundingClientRect().top - paddleHeight / 2;
+    });
+
+    // CUSTOM 6: Add slider to change ball speed
+    document.getElementById("ballSpeedX").addEventListener("change", (event, value) => {
+      ballSpeedX = event.target.value; 
+    })    
+
+    // Start the game loop
+    gameLoop();
+  </script>
+</body>
+</html>
